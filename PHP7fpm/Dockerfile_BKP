@@ -1,0 +1,63 @@
+FROM php:7.2.1-fpm
+MAINTAINER BRUNO ALVES br.alves7@gmail.com 
+
+RUN echo 'deb http://httpredir.debian.org/debian jessie contrib' >> /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y --force-yes libssl-dev curl  libcurl4-gnutls-dev libxml2-dev libicu-dev libmcrypt4 libmemcached-dev build-essential libmemcached11 openssl
+
+
+#########################
+###  HABILITAR REDIS  ###
+#########################
+
+RUN pecl install redis-4.0.1 \
+    && pecl install xdebug-2.6.0 \
+    && docker-php-ext-enable redis xdebug
+
+
+#########################
+#  HABILITAR MEMCHACED  #
+#########################
+
+RUN set -x \
+    && apt-get update && apt-get install -y zlib1g-dev unzip libssl-dev libpcre3 libpcre3-dev \
+    && cd /tmp \
+    && curl -sSL -o php7.zip https://github.com/websupport-sk/pecl-memcache/archive/php7.zip \
+    && unzip php7 \
+    && cd pecl-memcache-php7 \
+    && /usr/local/bin/phpize \
+    && ./configure --with-php-config=/usr/local/bin/php-config \
+    && make \
+    && make install \
+    && echo "extension=memcache.so" > /usr/local/etc/php/conf.d/ext-memcache.ini \
+    && rm -rf /tmp/pecl-memcache-php7 php7.zip
+
+
+##########################
+#CONFIGURAÇÕES DO OPCACHE#
+##########################
+
+RUN docker-php-ext-install opcache
+
+#######################
+#CONFIGURAÇÕES DO APCU#
+#######################
+RUN pecl install apcu-5.1.5 && docker-php-ext-enable apcu
+
+#LIBS EXTRAS
+
+RUN docker-php-ext-install bcmath
+RUN apt-get install -y libbz2-dev
+RUN docker-php-ext-install bz2
+RUN docker-php-ext-install mbstring
+RUN apt-get install -y libpq-dev
+RUN apt-get install -y libicu-dev
+RUN docker-php-ext-install intl
+
+#GD
+RUN apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng16-16
+RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/
+RUN docker-php-ext-install gd
+
+EXPOSE 9000
+CMD ["php-fpm"]
