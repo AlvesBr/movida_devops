@@ -4,7 +4,7 @@
     - name: restart docker
       service:
        name: docker
-       state: present
+       state: restarted
       become: yes
   tasks:
     - name: 'Instalando pacote do GIT'
