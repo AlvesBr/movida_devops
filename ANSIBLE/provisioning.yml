@@ -1,0 +1,34 @@
+---
+- hosts: all
+  handlers:
+    - name: restart docker
+      service:
+       name: docker
+       state: present
+      become: yes
+  tasks:
+    - name: 'Instalando pacote do GIT'
+      yum:
+        name: "{{ item }}"
+        state: latest
+      become: yes
+      with_items:
+            - git
+
+    - name: "Adicionando certificado do GITHUB"
+      shell: echo "github.com,192.30.253.113 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==" >> cat ~/.ssh/known_hosts
+
+
+    - name: 'Download do Repositorio do GITHUB'
+      git:
+        repo: git@github.com:AlvesBr/movida_devops.git
+        dest: '/tmp/MOVIDA/'
+
+    - name: "Instalando o DOCKER"
+      shell: curl -fsSL https://get.docker.com | sh
+    - name: "Instalando o DOCKER COMPOSE"
+      shell: curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
+      notify:
+        - restart docker 
+    - name: "Execução do DOCKER COMPOSE"
+      shell: cd /tmp/MOVIDA/ && docker-compose up -d 
